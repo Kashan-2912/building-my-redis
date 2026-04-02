@@ -7,8 +7,5 @@
   },
   "devDependencies": {
     "@types/bun": "latest"
-  },
-  "dependencies": {
-    "net": "^1.0.2"
   }
 }
