@@ -9,7 +9,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
   connection.on("data", (data: Buffer) => {
     const input = data.toString();
     
-    const match = input.match("/\*2\r\n\$\d+\r\n([Ee][Cc][Hh][Oo])\r\n\$(\d+)\r\n(.*)\r\n/ ,")
+    const match = input.match("/\*2\r\n\$\d+\r\n([Ee][Cc][Hh][Oo])\r\n\$(\d+)\r\n(.*)\r\n/");
 
     if(match) {
       const arg = match[3];
