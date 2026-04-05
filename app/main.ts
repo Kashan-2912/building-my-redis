@@ -27,6 +27,9 @@ function writeRESPSimpleString (data: string) {
 }
 
 function writeRESPBulkString (data: string) {
+  if( data === null) {
+    return "-1\r\n";
+  }
   return `$${data.length}\r\n${data}\r\n`;
 }
 
@@ -53,7 +56,7 @@ function SETFunction (key: string, value: string, EX?: number, PX?: number) {
 function GETFunction (key: string) {
   const value = mem.get(key);
   if (value === undefined) {
-    return "-1\r\n";
+    return null;
   }
 
   return value;
