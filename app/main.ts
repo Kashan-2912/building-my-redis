@@ -119,7 +119,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "LRANGE") {
       const listName = parts[1] ? parts[1] : "";
-      const values = parts.slice(2);
+      const values = mem.get(listName);
       let startIndex = parts[2] ? parseInt(parts[2]) : 0; 
       let stopIndex = parts[3] ? parseInt(parts[3]) : -1;
 
