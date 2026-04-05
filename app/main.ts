@@ -36,7 +36,7 @@ function writeRESPBulkString (data: string | null) {
 function SETFunction (key: string, value: string, EX?: number, PX?: number) {
   mem.set(key, value);
 
-  let ttl: number | undefined = undefined;
+  let ttl: number | undefined;
 
   if(EX !== undefined) {
     ttl = EX * 1000; // milli seconds
@@ -90,6 +90,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         SETFunction(key, value, parseInt(optionValue))
       } else if (optionName === "PX") {
         SETFunction(key, value, undefined, parseInt(optionValue))
+      } else if (optionName === "") {
+        SETFunction(key, value);
       }
       
       connection.write(writeRESPSimpleString("OK"));
