@@ -107,10 +107,13 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
       if (!mem.has(listName)) {
         mem.set(listName, [value]);
+        connection.write(`:1\r\n`);
       } else {
         const list = mem.get(listName);
         if (Array.isArray(list)) {
           list.push(value);
+          mem.set(listName, list);
+          connection.write(`:${list.length}\r\n`);
         }
       }
 
