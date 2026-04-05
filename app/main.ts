@@ -119,28 +119,29 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "LRANGE") {
       const listName = parts[1] ? parts[1] : "";
+      const values = parts.slice(2);
       let startIndex = parts[2] ? parseInt(parts[2]) : 0; 
       let stopIndex = parts[3] ? parseInt(parts[3]) : -1;
 
       if(!listName) {
         connection.write(`*0\r\n`);
         return;
-      } else if (startIndex > listName.length - 1 || startIndex === listName.length) {
+      } else if (startIndex > values.length - 1 || startIndex === values.length) {
         connection.write(`*0\r\n`);
         return;
-      } else if (stopIndex > listName.length - 1 || stopIndex === listName.length) {
-        stopIndex = listName.length - 1;
+      } else if (stopIndex > values.length - 1 || stopIndex === values.length) {
+        stopIndex = values.length - 1;
       } else if (Math.abs(startIndex) > Math.abs(stopIndex)) {
         connection.write(`*0\r\n`);
         return;
       } else if (startIndex < 0 && stopIndex < 0) {
-        startIndex = listName.length - 1 + startIndex;
-        stopIndex = listName.length - 1 + stopIndex;
+        startIndex = values.length - 1 + startIndex;
+        stopIndex = values.length - 1 + stopIndex;
       } else if (startIndex < 0 && stopIndex >= 0) {
-        startIndex = listName.length + startIndex;
+        startIndex = values.length + startIndex;
       } else if (startIndex >= 0 && stopIndex < 0) {
-        stopIndex = listName.length + stopIndex;
-      } else if (Math.abs(startIndex) > listName.length) {
+        stopIndex = values.length + stopIndex;
+      } else if (Math.abs(startIndex) > values.length) {
         startIndex = 0;
       }
 
