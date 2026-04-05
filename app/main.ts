@@ -36,7 +36,7 @@ function writeRESPBulkString (data: string | null) {
 function SETFunction (key: string, value: string, EX?: number, PX?: number) {
   mem.set(key, value);
 
-  let ttl: number | undefined;
+  let ttl: number | undefined = undefined;
 
   if(EX !== undefined) {
     ttl = EX * 1000; // milli seconds
@@ -63,8 +63,6 @@ function GETFunction (key: string) {
 }
 
 // ============================================ HELPERS ============================================
-
-// console.log("Logs from your program will appear here!");
 
 const server: net.Server = net.createServer((connection: net.Socket) => {
   connection.on("data", (data: Buffer) => {
