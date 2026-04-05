@@ -101,6 +101,20 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       const value = GETFunction(key);
       connection.write(writeRESPBulkString(value));
 
+    } else if (command === "RPUSH") {
+      const listName = parts[1] ? parts[1] : "";
+      const value = parts[2] ? parts[2] : "";
+
+      if (!mem.has(listName)) {
+        mem.set(listName, [value]);
+      } else {
+        const list = mem.get(listName);
+        if (Array.isArray(list)) {
+          list.push(value);
+        }
+      }
+
+
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
