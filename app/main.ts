@@ -126,7 +126,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       if(!listName) {
         connection.write(`*0\r\n`);
         return;
-      } else if (startIndex > values.length - 1 || startIndex === values.length) {
+      } else if (startIndex > 0 && (startIndex > values.length - 1 || startIndex === values.length)) {
         connection.write(`*0\r\n`);
         return;
       } else if (stopIndex > values.length - 1 || stopIndex === values.length) {
