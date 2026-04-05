@@ -105,18 +105,17 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       const listName = parts[1] ? parts[1] : "";
       const values = parts.slice(2);
 
-      if (!mem.has(listName)) {
-        mem.set(listName, [values]);
-        connection.write(`:1\r\n`);
-      } else {
-        const list = mem.get(listName);
-        if (Array.isArray(list)) {
-          list.push(values);
-          mem.set(listName, list);
-          connection.write(`:${list.length}\r\n`);
-        }
-      }
+      let list = mem.get(listName);
 
+      if(!list) {
+        list = [];
+      }
+      
+      if (Array.isArray(list)) {
+        list.push(...values);
+        mem.set(listName, list);
+        connection.write(`:${list.length}\r\n`);
+      }
 
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
