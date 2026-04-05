@@ -119,53 +119,39 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "LRANGE") {
       const listName = parts[1] ? parts[1] : "";
-      const values = mem.get(listName);
-      let startIndex = parts[2] ? parseInt(parts[2]) : 0; 
-      let stopIndex = parts[3] ? parseInt(parts[3]) : -1;
-
-      if(!listName) {
-        connection.write(`*0\r\n`);
-        return;
-      } else if (startIndex > 0 && (startIndex > values.length - 1 || startIndex === values.length)) {
-        connection.write(`*0\r\n`);
-        return;
-      } else if (stopIndex > values.length - 1 || stopIndex === values.length) {
-        stopIndex = values.length - 1;
-      } else if (startIndex < 0 && (Math.abs(startIndex) > values.length)) {
-        startIndex = 0;
-      } else if (startIndex > 0 || stopIndex > 0) {
-        if(Math.abs(startIndex) > Math.abs(stopIndex)) {
-          connection.write(`*0\r\n`);
-          return;
-        }
-      } else if (startIndex < 0 && stopIndex < 0) {
-        if(startIndex < stopIndex) {
-          startIndex = values.length + startIndex;
-          stopIndex = values.length + stopIndex;
-        } else {
-          connection.write(`*0\r\n`);
-          return;
-        }
-      } else if (startIndex < 0 && stopIndex >= 0) {
-        startIndex = values.length + startIndex;
-      } else if (startIndex >= 0 && stopIndex < 0) {
-        stopIndex = values.length + stopIndex;
-      } else {
-        connection.write(`*0\r\n`);
-        return;
-      }
-
       const list = mem.get(listName);
 
-      if(Array.isArray(list)) {
-        const slicedList = list.slice(startIndex, stopIndex + 1);
-        connection.write(`*${slicedList.length}\r\n`);
-        slicedList.forEach((item: string) => {
-          connection.write(writeRESPBulkString(item));
-        });
-      } else {
+      if (!Array.isArray(list)) {
         connection.write(`*0\r\n`);
+        return;
       }
+
+      let start = parts[2] ? parseInt(parts[2]) : 0; 
+      let stop = parts[3] ? parseInt(parts[3]) : -1;
+
+      const len = list.length;
+
+      // Step 1: Convert negatives to positives
+      if (start < 0) start = len + start;
+      if (stop < 0) stop = len + stop;
+
+      // Step 2: Check if out of bounds and adjust
+      if (start < 0) start = 0;
+      if (stop < 0) stop = 0;
+      if (stop >= len) stop = len - 1;
+
+      // Step 3: Validate
+      if (start > stop || start >= len) {
+        connection.write(`*0\r\n`);
+        return;
+      }
+
+      const sliced = list.slice(start, stop + 1);
+
+      connection.write(`*${sliced.length}\r\n`);
+      sliced.forEach((item: string) => {
+        connection.write(writeRESPBulkString(item));
+      });
 
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
