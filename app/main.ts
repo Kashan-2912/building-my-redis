@@ -137,9 +137,9 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         startIndex = listName.length - 1 + startIndex;
         stopIndex = listName.length - 1 + stopIndex;
       } else if (startIndex < 0 && stopIndex >= 0) {
-        startIndex = listName.length - 1 + startIndex;
+        startIndex = listName.length + startIndex;
       } else if (startIndex >= 0 && stopIndex < 0) {
-        stopIndex = listName.length - 1 + stopIndex;
+        stopIndex = listName.length + stopIndex;
       } else if (Math.abs(startIndex) > listName.length) {
         startIndex = 0;
       }
