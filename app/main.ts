@@ -130,7 +130,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         return;
       } else if (stopIndex > listName.length - 1 || stopIndex === listName.length) {
         stopIndex = listName.length - 1;
-      } else if (startIndex > stopIndex) {
+      } else if (Math.abs(startIndex) > Math.abs(stopIndex)) {
         connection.write(`*0\r\n`);
         return;
       } else if (startIndex < 0 && stopIndex < 0) {
