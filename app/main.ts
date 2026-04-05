@@ -136,8 +136,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         return;
       } else if (startIndex < 0 && stopIndex < 0) {
         if(startIndex < stopIndex) {
-          startIndex = values.length - 1 + startIndex;
-          stopIndex = values.length - 1 + stopIndex;
+          startIndex = values.length + startIndex;
+          stopIndex = values.length + stopIndex;
         } else {
           connection.write(`*0\r\n`);
           return;
