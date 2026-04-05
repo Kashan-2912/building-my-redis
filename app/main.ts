@@ -131,9 +131,11 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         return;
       } else if (stopIndex > values.length - 1 || stopIndex === values.length) {
         stopIndex = values.length - 1;
-      } else if (Math.abs(startIndex) > Math.abs(stopIndex)) {
-        connection.write(`*0\r\n`);
-        return;
+      } else if (startIndex > 0 || stopIndex > 0) {
+        if(Math.abs(startIndex) > Math.abs(stopIndex)) {
+          connection.write(`*0\r\n`);
+          return;
+        }
       } else if (startIndex < 0 && stopIndex < 0) {
         if(startIndex < stopIndex) {
           startIndex = values.length + startIndex;
