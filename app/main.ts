@@ -7,7 +7,7 @@ const mem = new Map<string, any>();
 
 function parseRESP (data : Buffer) : string[] {
   const input = data.toString();
-  const lines = input.split("\r\n").filter(line => line.length > 0);
+  const lines = input.split("\r\n").filter((line: string) => line.length > 0);
 
   const result: string[] = [];
 
