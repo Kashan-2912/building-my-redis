@@ -103,15 +103,17 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "RPUSH") {
       const listName = parts[1] ? parts[1] : "";
-      const value = parts[2] ? parts[2] : "";
+      // const value = parts[2] ? parts[2] : "";
+
+      const values = parts[2].slice(0).split(" ");
 
       if (!mem.has(listName)) {
-        mem.set(listName, [value]);
+        mem.set(listName, [values]);
         connection.write(`:1\r\n`);
       } else {
         const list = mem.get(listName);
         if (Array.isArray(list)) {
-          list.push(value);
+          list.push(values);
           mem.set(listName, list);
           connection.write(`:${list.length}\r\n`);
         }
