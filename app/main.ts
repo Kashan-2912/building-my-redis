@@ -28,7 +28,7 @@ function writeRESPSimpleString (data: string) {
 
 function writeRESPBulkString (data: string | null) {
   if(data === null) {
-    return "-1";
+    return "-1\r\n";
   }
   return `$${data.length}\r\n${data}\r\n`;
 }
