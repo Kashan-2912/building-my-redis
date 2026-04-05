@@ -30,8 +30,24 @@ function writeRESPBulkString (data: string) {
   return `$${data.length}\r\n${data}\r\n`;
 }
 
-function SETFunction (key: string, value: string) {
+function SETFunction (key: string, value: string, EX?: number, PX?: number) {
   mem.set(key, value);
+
+  let ttl: number | undefined;
+
+  if(EX !== undefined) {
+    ttl = EX * 1000; // milli seconds
+  }
+
+  if(PX !== undefined) {
+    ttl = PX; // milliseconds 
+  }
+
+  if(ttl !== undefined) {
+    setTimeout(() => {
+      mem.delete(key);
+    }, ttl)
+  }
 }
 
 function GETFunction (key: string) {
@@ -66,14 +82,22 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       const key = parts[1] ? parts[1] : "";
       const value = parts[2] ? parts[2] : "";
 
-      SETFunction(key, value)
+      const optionName = parts[3] ? parts[3] : "";
+      const optionValue = parts[4] ? parts[4] : "";
+
+      if(optionName === "EX") {
+        SETFunction(key, value, parseInt(optionValue))
+      } else if (optionName === "PX") {
+        SETFunction(key, value, undefined, parseInt(optionValue))
+      }
+      
       connection.write(writeRESPSimpleString("OK"));
 
     } else if (command === "GET") {
       const key = parts[1] ? parts[1] : "";
       const value = GETFunction(key);
       connection.write(writeRESPBulkString(value));
-      
+
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
