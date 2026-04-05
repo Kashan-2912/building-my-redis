@@ -117,6 +117,36 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         connection.write(`:${list.length}\r\n`);
       }
 
+    } else if (command === "LRANGE") {
+      const listName = parts[1] ? parts[1] : "";
+      let startIndex = parts[2] ? parseInt(parts[2]) : 0; 
+      let stopIndex = parts[3] ? parseInt(parts[3]) : -1;
+
+      if(!listName) {
+        connection.write(`*0\r\n`);
+        return;
+      } else if (startIndex > listName.length - 1 || startIndex === listName.length) {
+        connection.write(`*0\r\n`);
+        return;
+      } else if (stopIndex > listName.length - 1 || stopIndex === listName.length) {
+        stopIndex = listName.length - 1;
+      } else if (startIndex > stopIndex) {
+        connection.write(`*0\r\n`);
+        return;
+      }
+
+      const list = mem.get(listName);
+
+      if(Array.isArray(list)) {
+        const slicedList = list.slice(startIndex, stopIndex + 1);
+        connection.write(`*${slicedList.length}\r\n`);
+        slicedList.forEach((item: string) => {
+          connection.write(writeRESPBulkString(item));
+        });
+      } else {
+        connection.write(`*0\r\n`);
+      }
+
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
