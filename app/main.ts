@@ -123,7 +123,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       }
 
       if(Array.isArray(list)) {
-        list.push(...values.reverse());
+        list.push(...values);
+        list.reverse();
         mem.set(listName, list);
         connection.write(`:${list.length}\r\n`);
       }
