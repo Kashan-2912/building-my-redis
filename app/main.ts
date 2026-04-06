@@ -171,7 +171,17 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       if(Array.isArray(list)) {
         connection.write(`:${list.length}\r\n`);
       }
-      
+
+    } else if (command === "LPOP") {
+      if(!list) {
+        writeRESPBulkString(null);
+      }
+
+      if(Array.isArray(list)) {
+        const firstElement = list.shift();
+        writeRESPBulkString(firstElement);
+      }
+
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
