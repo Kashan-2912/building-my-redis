@@ -199,7 +199,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
             removedElements.push(firstElement);
           }
         } else {
-          const removed = list.splice(0, optionalCount - 1)
+          const removed = list.splice(0, optionalCount)
           removedElements = [...removedElements, ...removed];
         }
       
