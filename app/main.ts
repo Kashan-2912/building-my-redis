@@ -162,6 +162,16 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         connection.write(writeRESPBulkString(item));
       });
 
+    } else if (command === "LLEN") {
+      if(!list) {
+        connection.write(`:0\r\n`);
+        return;
+      }
+
+      if(Array.isArray(list)) {
+        connection.write(`:${list.length}\r\n`);
+      }
+      
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
