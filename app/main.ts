@@ -174,12 +174,13 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "LPOP") {
       if(!list) {
-        writeRESPBulkString(null);
+        connection.write(writeRESPBulkString(null));
       }
 
       if(Array.isArray(list)) {
         const firstElement = list.shift();
-        writeRESPBulkString(firstElement);
+        mem.set(listName, list);
+        connection.write(writeRESPBulkString(firstElement));
       }
 
     } else {
