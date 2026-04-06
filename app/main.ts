@@ -182,7 +182,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "LPOP") {
       let removedElements: string[] | null = [];
-      let optionalCount = values[0] ? parseInt(values[0]) : 1;
+      let optionalCount: number = parseInt(values[0]);
 
       if(!list) {
         connection.write(writeRESPBulkString(null));
@@ -193,6 +193,14 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       }
 
       if(Array.isArray(list)) {
+        if(!optionalCount) {
+          const firstElement = list.shift();
+          removedElements.push(firstElement);
+          mem.set(listName, list);
+          connection.write(writeRESPBulkString(firstElement));
+          return;
+        }
+        
         if(optionalCount === 1) {
           const firstElement = list.shift();
           if (firstElement !== undefined) {
