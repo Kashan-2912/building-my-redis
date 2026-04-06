@@ -33,6 +33,14 @@ function writeRESPBulkString (data: string | null) {
   return `$${data.length}\r\n${data}\r\n`;
 }
 
+function writeRESPArray (data: string[]) {
+  if(data.length === 0) {
+    return `*0\r\n`;
+  }
+
+  return `*${data.length}\r\n` + data.map(item => writeRESPBulkString(item)).join("");
+}
+
 function SETFunction (key: string, value: string, EX?: number, PX?: number) {
   mem.set(key, value);
 
@@ -173,14 +181,30 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       }
 
     } else if (command === "LPOP") {
+      let removedElements: string[] | null = [];
+      let optionalCount = values[0] ? parseInt(values[0]) : 1;
+
       if(!list) {
         connection.write(writeRESPBulkString(null));
       }
 
+      if(optionalCount > list.length) {
+        optionalCount = list.length;
+      }
+
       if(Array.isArray(list)) {
-        const firstElement = list.shift();
+        if(optionalCount === 1) {
+          const firstElement = list.shift();
+          if (firstElement !== undefined) {
+            removedElements.push(firstElement);
+          }
+        } else {
+          const removed = list.splice(0, optionalCount - 1)
+          removedElements = [...removedElements, ...removed];
+        }
+      
         mem.set(listName, list);
-        connection.write(writeRESPBulkString(firstElement));
+        connection.write(writeRESPArray(removedElements));
       }
 
     } else {
