@@ -72,6 +72,11 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     const command = parts[0].toUpperCase();
 
+    const listName = parts[1] ? parts[1] : "";
+    const values = parts.slice(2);
+
+    let list = mem.get(listName);
+
     if(command === "PING") {
       connection.write(writeRESPSimpleString("PONG"));
 
@@ -102,11 +107,6 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       connection.write(writeRESPBulkString(value));
 
     } else if (command === "RPUSH") {
-      const listName = parts[1] ? parts[1] : "";
-      const values = parts.slice(2);
-
-      let list = mem.get(listName);
-
       if(!list) {
         list = [];
       }
@@ -117,10 +117,18 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         connection.write(`:${list.length}\r\n`);
       }
 
-    } else if (command === "LRANGE") {
-      const listName = parts[1] ? parts[1] : "";
-      const list = mem.get(listName);
+    } else if (command === "LPUSH") {
+      if(!list) {
+        list = [];
+      }
 
+      if(Array.isArray(list)) {
+        list.push(...values.reverse());
+        mem.set(listName, list);
+        connection.write(`:${list.length}\r\n`);
+      }
+
+    } else if (command === "LRANGE") {
       if (!Array.isArray(list)) {
         connection.write(`*0\r\n`);
         return;
