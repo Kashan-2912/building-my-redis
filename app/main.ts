@@ -268,6 +268,20 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         }, timeout * 1000);
       }
 
+    } else if (command === "TYPE") {
+      if(!mem.has(listName)) {
+        connection.write(writeRESPSimpleString("none"));
+      }
+
+      const value = mem.get(listName);
+      if (typeof value === "string") {
+        connection.write(writeRESPSimpleString("string"));
+      } else if (Array.isArray(value)) {
+        connection.write(writeRESPSimpleString("list"));
+      } else {
+        connection.write(writeRESPSimpleString("unknown"));
+      }
+      
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
