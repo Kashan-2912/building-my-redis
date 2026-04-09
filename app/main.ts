@@ -8,6 +8,16 @@ const mem = new Map<string, any>();
 // waiting clients for BLPOP
 const waiting = new Map<string, { connection: net.Socket }[]>();
 
+type StreamEntry = {
+  id: number;
+  fields: Record<string, string>;
+};
+
+// streams
+type Stream = Map<string, StreamEntry[]>;
+
+const stream: Stream = new Map();
+
 function parseRESP (data : Buffer) : string[] {
   const input = data.toString();
   const lines = input.split("\r\n").filter((line: string) => line.length > 0);
@@ -269,17 +279,46 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       }
 
     } else if (command === "TYPE") {
-      if(!mem.has(listName)) {
-        connection.write(writeRESPSimpleString("none"));
+      if(mem.has(listName)) {
+        const value = mem.get(listName);
+
+        if (typeof value === "string") {
+          connection.write(writeRESPSimpleString("string"));
+          return;
+        } else if (Array.isArray(value)) {
+          connection.write(writeRESPSimpleString("list"));
+          return;
+        }
       }
 
-      const value = mem.get(listName);
-      if (typeof value === "string") {
-        connection.write(writeRESPSimpleString("string"));
-      } else if (Array.isArray(value)) {
-        connection.write(writeRESPSimpleString("list"));
+      if(stream.has(listName)) {
+        connection.write(writeRESPSimpleString("stream"));
+        return;
       }
 
+      connection.write(writeRESPSimpleString("none"));
+
+    } else if (command === "XADD") {
+      const streamName = parts[1] ?? "";
+      const id = Date.now();
+      const normalizedFields = values.slice(1); // Skip the stream name
+
+      const fields: Record<string, string> = {};
+      for(let i = 0; i < normalizedFields.length; i += 2) {
+        const field = normalizedFields[i];
+        const value = normalizedFields[i + 1] ?? "";
+        fields[field] = value;
+      }
+
+      if(!stream.has(streamName)) {
+        const newStream: StreamEntry[] = [];
+        stream.set(streamName, newStream);
+      }
+
+      const streamEntries = stream.get(streamName)!;
+      streamEntries.push({ id, fields });
+
+      connection.write(writeRESPBulkString(id.toString()));
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
