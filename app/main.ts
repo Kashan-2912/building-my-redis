@@ -5,6 +5,9 @@ import * as net from "net";
 // In-memory storage for key-value pairs
 const mem = new Map<string, any>();
 
+// waiting clients for BLPOP
+const waiting = new Map<string, { connection: net.Socket }[]>();
+
 function parseRESP (data : Buffer) : string[] {
   const input = data.toString();
   const lines = input.split("\r\n").filter((line: string) => line.length > 0);
@@ -70,7 +73,7 @@ function GETFunction (key: string) {
   return value;
 }
 
-// ============================================ HELPERS ============================================
+// ============================================ SERVER ============================================
 
 const server: net.Server = net.createServer((connection: net.Socket) => {
   connection.on("data", (data: Buffer) => {
@@ -123,6 +126,20 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         list.push(...values);
         mem.set(listName, list);
         connection.write(`:${list.length}\r\n`);
+
+        // wake up waiting BLPOP clients
+        if (waiting.has(listName)) {
+          const queue = waiting.get(listName)!;
+
+          while (queue.length > 0 && list.length > 0) {
+            const { connection } = queue.shift()!;
+            const value = list.shift();
+
+            connection.write(writeRESPArray([listName, value]));
+          }
+
+          mem.set(listName, list);
+        }
       }
 
     } else if (command === "LPUSH") {
@@ -213,6 +230,42 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       
         mem.set(listName, list);
         connection.write(writeRESPArray(removedElements));
+      }
+
+    } else if (command === "BLPOP") {
+      const timeout = parseInt(values[0] ?? "0");
+
+      // immediate return if data exists
+      if (Array.isArray(list) && list.length > 0) {
+        const value = list.shift();
+        mem.set(listName, list);
+
+        connection.write(writeRESPArray([listName, value]));
+        return;
+      }
+
+      // otherwise block
+      if (!waiting.has(listName)) {
+        waiting.set(listName, []);
+      }
+
+      const queue = waiting.get(listName)!;
+      const entry = { connection };
+
+      queue.push(entry);
+
+      // timeout handling
+      if (timeout > 0) {
+        setTimeout(() => {
+          const q = waiting.get(listName);
+          if (!q) return;
+
+          const index = q.indexOf(entry);
+          if (index !== -1) {
+            q.splice(index, 1);
+            connection.write(`*-1\r\n`);
+          }
+        }, timeout * 1000);
       }
 
     } else {
