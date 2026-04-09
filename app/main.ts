@@ -278,10 +278,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         connection.write(writeRESPSimpleString("string"));
       } else if (Array.isArray(value)) {
         connection.write(writeRESPSimpleString("list"));
-      } else {
-        connection.write(writeRESPSimpleString("unknown"));
       }
-      
+
     } else {
       connection.write(`-ERR unknown command '${command}'\r\n`);
 
