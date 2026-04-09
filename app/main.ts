@@ -300,7 +300,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "XADD") {
       const streamName = parts[1] ?? "";
-      const id = Date.now();
+      const id = parts[2] ?? "";
       const normalizedFields = values.slice(1); // Skip the stream name
 
       const fields: Record<string, string> = {};
