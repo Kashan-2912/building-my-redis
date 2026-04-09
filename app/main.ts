@@ -233,7 +233,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       }
 
     } else if (command === "BLPOP") {
-      const timeout = parseInt(values[0] ?? "0");
+      const timeout = parseFloat(values[0] ?? "0");
 
       // immediate return if data exists
       if (Array.isArray(list) && list.length > 0) {
