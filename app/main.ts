@@ -374,18 +374,34 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       const streamName = parts[1] ?? "";
       let id = parts[2] ?? "";
       const [msStr, seqStr] = id.split("-");
+
       let currMs = Number(msStr);
 
       let currSeq: number;
 
-      if (seqStr === "*") {
+      if(!id.includes("-") && id === "*") {
+        currMs = Date.now();
         currSeq = generateSequence(currMs, streamName);
-      } else {
-        currSeq = Number(seqStr);
 
-        const isValid = validateExplicitID(currMs, currSeq, streamName, connection);
-        if (!isValid) {
-          return;
+      } else {
+        // case: 1-* etc...
+        if (seqStr === "*" && msStr !== "*") {
+          currSeq = generateSequence(currMs, streamName);
+        } 
+
+        // case 2: only * → generate both ms and seq
+        else if (msStr === "*") {
+          currMs = Date.now();
+          currSeq = generateSequence(currMs, streamName);
+        } 
+
+        // case 3: explicit ID provided, validate it
+        else {
+          currSeq = Number(seqStr);
+          const isValid = validateExplicitID(currMs, currSeq, streamName, connection);
+          if (!isValid) {
+            return;
+          }
         }
       }
 
