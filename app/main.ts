@@ -9,7 +9,7 @@ const mem = new Map<string, any>();
 const waiting = new Map<string, { connection: net.Socket }[]>();
 
 type StreamEntry = {
-  id: number;
+  id: string;
   fields: Record<string, string>;
 };
 
@@ -37,6 +37,10 @@ function parseRESP (data : Buffer) : string[] {
 
 function writeRESPSimpleString (data: string) {
   return `+${data}\r\n`;
+}
+
+function writeRESPError (data: string) {
+  return `-${data}\r\n`;
 }
 
 function writeRESPBulkString (data: string | null) {
@@ -301,6 +305,48 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
     } else if (command === "XADD") {
       const streamName = parts[1] ?? "";
       const id = parts[2] ?? "";
+      const [msStr, seqStr] = id.split("-");
+      const currMs = Number(msStr);
+      const currSeq = Number(seqStr);
+
+      // validate id format
+      if (isNaN(currMs) || isNaN(currSeq)) {
+        connection.write(writeRESPError("invalid stream ID"));
+        return;
+      }
+
+      if(currMs === 0 && currSeq === 0) {
+        connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
+        return;
+      }
+
+      if(!stream.has(streamName)) {
+        stream.set(streamName, []);
+      }
+
+      const streamEntries = stream.get(streamName)!;
+
+      if(streamEntries.length > 0) {
+
+        // stream is not empty
+        const lastStreamEntry = streamEntries[streamEntries.length - 1];
+        const [lastMsStr, lastSeqStr] = lastStreamEntry.id.split("-");
+        const lastMs = Number(lastMsStr);
+        const lastSeq = Number(lastSeqStr);
+
+        // checks
+        if(currMs < lastMs || (currMs === lastMs && currSeq <= lastSeq)) {
+          connection.write(writeRESPError("ERR The ID specified in XADD is equal or smaller than the target stream top item"));
+          return;
+        }
+      } else {
+        // stream is empty, id must be greater than 0-0
+        if(currMs === 0 && currSeq === 0) {
+          connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
+          return;
+        }
+      }
+
       const normalizedFields = values.slice(1); // Skip the stream name
 
       const fields: Record<string, string> = {};
@@ -309,18 +355,12 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         const value = normalizedFields[i + 1] ?? "";
         fields[field] = value;
       }
-
-      if(!stream.has(streamName)) {
-        const newStream: StreamEntry[] = [];
-        stream.set(streamName, newStream);
-      }
-
-      const streamEntries = stream.get(streamName)!;
+      
       streamEntries.push({ id, fields });
+      connection.write(writeRESPBulkString(id));
 
-      connection.write(writeRESPBulkString(id.toString()));
     } else {
-      connection.write(`-ERR unknown command '${command}'\r\n`);
+      connection.write(writeRESPError(`unknown command '${command}'`));
 
     }
   })
