@@ -400,6 +400,10 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         fields[field] = value;
       }
 
+      if (!stream.has(streamName)) {
+        stream.set(streamName, []);
+      }
+
       const streamEntries = stream.get(streamName)!;
 
       streamEntries.push({ id, fields });
