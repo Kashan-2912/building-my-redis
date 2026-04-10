@@ -87,14 +87,17 @@ function GETFunction (key: string) {
   return value;
 }
 
-function geneterateStreamEntryID(currMs: number, currSeq: number, connection: net.Socket, streamName: string) : number | undefined {
+function geneterateStreamEntryID(currMs: number, connection: net.Socket, streamName: string) : number | undefined {
+  
+  let currSeq = 0;
+
   // validate id format
-  if (isNaN(currMs) || isNaN(currSeq)) {
+  if (isNaN(currMs)) {
     connection.write(writeRESPError("invalid stream ID"));
     return;
   }
 
-  if(currMs === 0 && currSeq === 0) {
+  if(currMs === 0) {
     connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
     return;
   }
@@ -365,14 +368,15 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       let id = parts[2] ?? "";
       const [msStr, seqStr] = id.split("-");
       let currMs = Number(msStr);
-      let currSeq = Number(seqStr);
+      // let currSeq = Number(seqStr);
 
-      const newCurrSeq = geneterateStreamEntryID(currMs, currSeq, connection, streamName);
+      const newCurrSeq = geneterateStreamEntryID(currMs, connection, streamName);
 
       if(newCurrSeq === undefined) {
         return;
       }
-      currSeq = newCurrSeq;
+
+      const currSeq = newCurrSeq;
       id = `${currMs}-${currSeq}`;
 
       // making fields map
