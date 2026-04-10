@@ -87,6 +87,64 @@ function GETFunction (key: string) {
   return value;
 }
 
+function geneterateStreamEntryID(currMs: number, currSeq: number, connection: net.Socket, streamName: string) : number | undefined {
+  // validate id format
+  if (isNaN(currMs) || isNaN(currSeq)) {
+    connection.write(writeRESPError("invalid stream ID"));
+    return;
+  }
+
+  if(currMs === 0 && currSeq === 0) {
+    connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
+    return;
+  }
+
+  if(!stream.has(streamName)) {
+    stream.set(streamName, []);
+  }
+
+  const streamEntries = stream.get(streamName)!;
+
+  if(streamEntries.length > 0) {
+    if(currMs === 0) {
+      return currSeq = 1;
+    }
+
+    let lastMatchingMS;
+    let lastMatchingSeq;
+
+    for (let i = streamEntries.length - 1; i >= 0; i--) {
+      // stream exists for given time part...
+      if (currMs === Number(streamEntries[i].id.split("-")[0])) {
+        const lastMs = Number(streamEntries[i].id.split("-")[0]);
+        const lastSeq = Number(streamEntries[i].id.split("-")[1]);
+        lastMatchingMS = lastMs; 
+        lastMatchingSeq = lastSeq;
+        return currSeq = lastSeq + 1;
+        
+      } else {
+        // stream doesn't exist for given time part, reset sequence to 0
+        return currSeq = 0;
+      }
+    }
+
+    // checks
+    if(lastMatchingMS !== undefined && lastMatchingSeq !== undefined) {
+      if(currMs < lastMatchingMS || (currMs === lastMatchingMS && currSeq <= lastMatchingSeq)) {
+        connection.write(writeRESPError("ERR The ID specified in XADD is equal or smaller than the target stream top item"));
+        return;
+      }
+    }
+
+  } else {
+    // stream is empty, id must be greater than 0-0
+    if(currMs === 0 && currSeq === 0) {
+      connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
+      return;
+    }
+  }
+}
+
 // ============================================ SERVER ============================================
 
 const server: net.Server = net.createServer((connection: net.Socket) => {
@@ -304,76 +362,29 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
     } else if (command === "XADD") {
       const streamName = parts[1] ?? "";
-      const id = parts[2] ?? "";
+      let id = parts[2] ?? "";
       const [msStr, seqStr] = id.split("-");
       let currMs = Number(msStr);
       let currSeq = Number(seqStr);
 
-      // validate id format
-      if (isNaN(currMs) || isNaN(currSeq)) {
-        connection.write(writeRESPError("invalid stream ID"));
+      const newCurrSeq = geneterateStreamEntryID(currMs, currSeq, connection, streamName);
+
+      if(newCurrSeq === undefined) {
         return;
       }
+      currSeq = newCurrSeq;
+      id = `${currMs}-${currSeq}`;
 
-      if(currMs === 0 && currSeq === 0) {
-        connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
-        return;
-      }
-
-      if(!stream.has(streamName)) {
-        stream.set(streamName, []);
-      }
-
-      const streamEntries = stream.get(streamName)!;
-
-      if(streamEntries.length > 0) {
-        if(currMs === 0) {
-          currSeq = 1;
-        }
-
-        let lastMatchingMS;
-        let lastMatchingSeq;
-
-        for (let i = streamEntries.length - 1; i >= 0; i--) {
-          // stream exists for given time part...
-          if (currMs === Number(streamEntries[i].id.split("-")[0])) {
-            const lastMs = Number(streamEntries[i].id.split("-")[0]);
-            const lastSeq = Number(streamEntries[i].id.split("-")[1]);
-            currSeq = lastSeq + 1;
-            lastMatchingMS = lastMs; 
-            lastMatchingSeq = lastSeq;
-            break;
-
-          } else {
-            // stream doesn't exist for given time part, reset sequence to 0
-            currSeq = 0;
-          }
-        }
-
-        // checks
-        if(lastMatchingMS !== undefined && lastMatchingSeq !== undefined) {
-          if(currMs < lastMatchingMS || (currMs === lastMatchingMS && currSeq <= lastMatchingSeq)) {
-            connection.write(writeRESPError("ERR The ID specified in XADD is equal or smaller than the target stream top item"));
-            return;
-          }
-        }
-
-      } else {
-        // stream is empty, id must be greater than 0-0
-        if(currMs === 0 && currSeq === 0) {
-          connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
-          return;
-        }
-      }
-
+      // making fields map
       const normalizedFields = values.slice(1); // Skip the stream name
-
       const fields: Record<string, string> = {};
       for(let i = 0; i < normalizedFields.length; i += 2) {
         const field = normalizedFields[i];
         const value = normalizedFields[i + 1] ?? "";
         fields[field] = value;
       }
+
+      const streamEntries = stream.get(streamName)!;
 
       streamEntries.push({ id, fields });
       connection.write(writeRESPBulkString(id));
