@@ -121,6 +121,40 @@ function generateSequence(currMs: number, streamName: string): number {
   return maxSeq === -1 ? 0 : maxSeq + 1;
 }
 
+function validateExplicitID(
+  currMs: number,
+  currSeq: number,
+  streamName: string,
+  connection: net.Socket
+): boolean {
+
+  if (currMs === 0 && currSeq === 0) {
+    connection.write(writeRESPError("ERR The ID specified in XADD must be greater than 0-0"));
+    return false;
+  }
+
+  if (!stream.has(streamName)) return true;
+
+  const entries = stream.get(streamName)!;
+
+  if (entries.length === 0) return true;
+
+  const last = entries[entries.length - 1];
+  const [lastMsStr, lastSeqStr] = last.id.split("-");
+  const lastMs = Number(lastMsStr);
+  const lastSeq = Number(lastSeqStr);
+
+  if (
+    currMs < lastMs ||
+    (currMs === lastMs && currSeq <= lastSeq)
+  ) {
+    connection.write(writeRESPError("ERR The ID specified in XADD is equal or smaller than the target stream top item"));
+    return false;
+  }
+
+  return true;
+}
+
 // ============================================ SERVER ============================================
 
 const server: net.Server = net.createServer((connection: net.Socket) => {
@@ -348,6 +382,11 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         currSeq = generateSequence(currMs, streamName);
       } else {
         currSeq = Number(seqStr);
+
+        const isValid = validateExplicitID(currMs, currSeq, streamName, connection);
+        if (!isValid) {
+          return;
+        }
       }
 
       id = `${currMs}-${currSeq}`;
