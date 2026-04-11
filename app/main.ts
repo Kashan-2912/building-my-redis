@@ -459,7 +459,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
               for(const [field, value] of Object.entries(entry.fields)) {
                 singleEntryWithFields.push(field);
                 singleEntryWithFields.push(value);
-                connection.write(writeRESPArray(singleEntryWithFields));
+                singleEntry.push(...singleEntryWithFields);
                 singleEntryWithFields.length = 0;
               }
             }
