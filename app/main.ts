@@ -452,7 +452,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
       for(const [name, entries] of resultStream) {
         for(const entry of entries) {
-          normalizedArray.push(name);
+          // normalizedArray.push(name);
           normalizedArray.push(entry.id);
           for(const [field, value] of Object.entries(entry.fields)) {
             normalizedArray.push(field);
