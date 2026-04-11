@@ -425,6 +425,32 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       streamEntries.push({ id, fields });
       connection.write(writeRESPBulkString(id));
 
+    } else if (command === "XRANGE") {
+      const resultStream: Stream = new Map();
+
+      const streamName = parts[1] ?? "";
+      const start = values[0] ?? "-";
+      const end = values[1] ?? "+";
+
+      if(!stream.has(streamName)) {
+        connection.write(writeRESPArray([]));
+        return;
+      }
+
+      const streamEntries = stream.get(streamName)!;
+
+      for(const entry of streamEntries) {
+        if((start === "-" || entry.id >= start) && (end === "+" || entry.id <= end)) {
+          if(!resultStream.has(streamName)) {
+            resultStream.set(streamName, []);
+          }
+          resultStream.get(streamName)!.push(entry);
+        }
+      }
+
+      const normalizedArray = [...resultStream.get(streamName) ?? []].flatMap(entry => [entry.id, ...Object.values(entry.fields)]);
+
+      connection.write(writeRESPArray(normalizedArray));
     } else {
       connection.write(writeRESPError(`unknown command '${command}'`));
 
