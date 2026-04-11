@@ -448,7 +448,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         }
       }
 
-      const normalizedArray = [...resultStream.get(streamName) ?? []].flatMap(entry => [writeRESPBulkString(entry.id), [...Object.values(entry.fields)]]).flatMap(item => writeRESPBulkString(item.toString()));
+      const normalizedArray = [...resultStream.get(streamName) ?? []].flatMap(entry => [entry.id, [...Object.values(entry.fields)]]).flatMap(item => writeRESPBulkString(item.toString()));
 
       connection.write(writeRESPArray(normalizedArray));
     } else {
