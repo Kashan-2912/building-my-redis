@@ -448,17 +448,24 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         }
       }
 
-      const normalizedArray = [];
+      const normalizedArray: string[] = [];
+      const singleEntry: string[] = [];
+      const singleEntryWithFields: string[] = [];
 
       for(const [name, entries] of resultStream) {
         for(const entry of entries) {
           // normalizedArray.push(name);
-          normalizedArray.push(entry.id);
+          singleEntry.push(entry.id);
           for(const [field, value] of Object.entries(entry.fields)) {
-            normalizedArray.push(field);
-            normalizedArray.push(value);
+            singleEntryWithFields.push(field);
+            singleEntryWithFields.push(value);
+
+            singleEntry.push(...singleEntryWithFields);
           }
         }
+
+        normalizedArray.push(...singleEntry);
+
       }
 
       connection.write(writeRESPArray(normalizedArray));
