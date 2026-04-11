@@ -426,12 +426,6 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       connection.write(writeRESPBulkString(id));
 
     } else if (command === "XRANGE") {
-      let resultStream: Stream = new Map();
-
-      const normalizedArray: string[] = [];
-      const singleEntry: string[] = [];
-      const singleEntryWithFields: string[] = [];
-
       const streamName = parts[1] ?? "";
       const start = values[0] ?? "-";
       const end = values[1] ?? "+";
@@ -442,33 +436,21 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       }
 
       const streamEntries = stream.get(streamName)!;
+      const result: any[] = [];
 
       for(const entry of streamEntries) {
         if((start === "-" || entry.id >= start) && (end === "+" || entry.id <= end)) {
-          if(!resultStream.has(streamName)) {
-            resultStream.set(streamName, []);
+          const fieldArray: string[] = [];
+          for(const [field, value] of Object.entries(entry.fields)) {
+            fieldArray.push(field, value);
           }
 
-          resultStream.get(streamName)!.push(entry);
+          result.push([entry.id, fieldArray]);
         }
       }
 
-      for(const [name, entries] of resultStream) {
-            for(const entry of entries) {
-              singleEntry.push(entry.id);
-              for(const [field, value] of Object.entries(entry.fields)) {
-                singleEntryWithFields.push(field, value);
-                singleEntry.push(...singleEntryWithFields);
-                singleEntryWithFields.length = 0;
-              }
-            }
-            normalizedArray.push(...singleEntry);
+      connection.write(writeRESPArray(result));
 
-            singleEntry.length = 0;
-            
-          }
-
-      connection.write(writeRESPArray(normalizedArray));
     } else {
       connection.write(writeRESPError(`unknown command '${command}'`));
 
