@@ -460,12 +460,13 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
                 singleEntryWithFields.push(field);
                 singleEntryWithFields.push(value);
                 singleEntry.push(...singleEntryWithFields);
+                singleEntryWithFields.length = 0;
               }
             }
             normalizedArray.push(...singleEntry);
 
             singleEntry.length = 0;
-            singleEntryWithFields.length = 0;
+            
           }
 
       connection.write(writeRESPArray(normalizedArray));
