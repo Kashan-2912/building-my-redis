@@ -426,7 +426,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       connection.write(writeRESPBulkString(id));
 
     } else if (command === "XRANGE") {
-      const resultStream: Stream = new Map();
+      let resultStream: Stream = new Map();
 
       const normalizedArray: string[] = [];
       const singleEntry: string[] = [];
@@ -449,8 +449,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
             resultStream.set(streamName, []);
           }
 
-          resultStream.get(streamName)!;
-          
+          resultStream.get(streamName)!.push(entry);
+
           for(const [name, entries] of resultStream) {
             for(const entry of entries) {
               singleEntry.push(entry.id);
