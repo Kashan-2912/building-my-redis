@@ -457,13 +457,12 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
             for(const entry of entries) {
               singleEntry.push(entry.id);
               for(const [field, value] of Object.entries(entry.fields)) {
-                singleEntryWithFields.push(field);
-                singleEntryWithFields.push(value);
+                singleEntryWithFields.push(field, value);
                 singleEntry.push(...singleEntryWithFields);
                 singleEntryWithFields.length = 0;
               }
             }
-            connection.write(writeRESPArray(singleEntry));
+            normalizedArray.push(...singleEntry);
 
             singleEntry.length = 0;
             
