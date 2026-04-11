@@ -450,8 +450,10 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
           }
 
           resultStream.get(streamName)!.push(entry);
+        }
+      }
 
-          for(const [name, entries] of resultStream) {
+      for(const [name, entries] of resultStream) {
             for(const entry of entries) {
               singleEntry.push(entry.id);
               for(const [field, value] of Object.entries(entry.fields)) {
@@ -462,8 +464,6 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
             }
             normalizedArray.push(...singleEntry);
           }
-        }
-      }
 
       connection.write(writeRESPArray(normalizedArray));
     } else {
