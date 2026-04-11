@@ -459,11 +459,11 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
               for(const [field, value] of Object.entries(entry.fields)) {
                 singleEntryWithFields.push(field);
                 singleEntryWithFields.push(value);
-                singleEntry.push(...singleEntryWithFields);
+                connection.write(writeRESPArray(singleEntryWithFields));
                 singleEntryWithFields.length = 0;
               }
             }
-            normalizedArray.push(...singleEntry);
+            connection.write(writeRESPArray(singleEntry));
 
             singleEntry.length = 0;
             
