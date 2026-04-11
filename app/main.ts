@@ -449,18 +449,20 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       }
 
       const normalizedArray = [];
+      const normalizedNestedArray = [];
 
       for(const [name, entries] of resultStream) {
         for(const entry of entries) {
           // normalizedArray.push(name);
           normalizedArray.push(entry.id);
           for(const [field, value] of Object.entries(entry.fields)) {
-            normalizedArray.push(field);
-            normalizedArray.push(value);
+            normalizedNestedArray.push(field);
+            normalizedNestedArray.push(value);
           }
         }
       }
 
+      normalizedArray.push(writeRESPArray(normalizedNestedArray));
       connection.write(writeRESPArray(normalizedArray));
     } else {
       connection.write(writeRESPError(`unknown command '${command}'`));
