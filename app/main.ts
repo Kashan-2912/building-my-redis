@@ -50,12 +50,31 @@ function writeRESPBulkString (data: string | null) {
   return `$${data.length}\r\n${data}\r\n`;
 }
 
-function writeRESPArray (data: string[]) {
-  if(data.length === 0) {
+function writeRESPArray (data: any): string {
+  // if(data.length === 0) {
+  //   return `*0\r\n`;
+  // }
+
+  // return `*${data.length}\r\n` + data.map(item => writeRESPBulkString(item)).join("");
+
+  // if data -> bulk string
+  if (typeof data === "string") {
+    return writeRESPBulkString(data);
+  }
+
+  if(data === null) {
+    return `*-1\r\n`;
+  }
+
+  if (data.length === 0) {
     return `*0\r\n`;
   }
 
-  return `*${data.length}\r\n` + data.map(item => writeRESPBulkString(item)).join("");
+  if(Array.isArray(data)) {
+    return `*${data.length}\r\n` + data.map((item: any) => writeRESPArray(item)).join("");
+  }
+  
+  return "";
 }
 
 function SETFunction (key: string, value: string, EX?: number, PX?: number) {
