@@ -428,6 +428,10 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
     } else if (command === "XRANGE") {
       const resultStream: Stream = new Map();
 
+      const normalizedArray: string[] = [];
+      const singleEntry: string[] = [];
+      const singleEntryWithFields: string[] = [];
+
       const streamName = parts[1] ?? "";
       const start = values[0] ?? "-";
       const end = values[1] ?? "+";
@@ -444,28 +448,21 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
           if(!resultStream.has(streamName)) {
             resultStream.set(streamName, []);
           }
-          resultStream.get(streamName)!.push(entry);
-        }
-      }
 
-      const normalizedArray: string[] = [];
-      const singleEntry: string[] = [];
-      const singleEntryWithFields: string[] = [];
-
-      for(const [name, entries] of resultStream) {
-        for(const entry of entries) {
-          // normalizedArray.push(name);
-          singleEntry.push(entry.id);
-          for(const [field, value] of Object.entries(entry.fields)) {
-            singleEntryWithFields.push(field);
-            singleEntryWithFields.push(value);
-
-            singleEntry.push(...singleEntryWithFields);
+          resultStream.get(streamName)!;
+          
+          for(const [name, entries] of resultStream) {
+            for(const entry of entries) {
+              singleEntry.push(entry.id);
+              for(const [field, value] of Object.entries(entry.fields)) {
+                singleEntryWithFields.push(field);
+                singleEntryWithFields.push(value);
+                singleEntry.push(...singleEntryWithFields);
+              }
+            }
+            normalizedArray.push(...singleEntry);
           }
         }
-
-        normalizedArray.push(...singleEntry);
-
       }
 
       connection.write(writeRESPArray(normalizedArray));
