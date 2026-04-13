@@ -51,12 +51,6 @@ function writeRESPBulkString (data: string | null) {
 }
 
 function writeRESPArray (data: any): string {
-  // if(data.length === 0) {
-  //   return `*0\r\n`;
-  // }
-
-  // return `*${data.length}\r\n` + data.map(item => writeRESPBulkString(item)).join("");
-
   // if data -> bulk string
   if (typeof data === "string") {
     return writeRESPBulkString(data);
@@ -70,10 +64,11 @@ function writeRESPArray (data: any): string {
     return `*0\r\n`;
   }
 
+  // recursion for nested arrays
   if(Array.isArray(data)) {
     return `*${data.length}\r\n` + data.map((item: any) => writeRESPArray(item)).join("");
   }
-  
+
   return "";
 }
 
