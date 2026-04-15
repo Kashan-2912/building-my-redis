@@ -174,13 +174,20 @@ function validateExplicitID(
 const server: net.Server = net.createServer((connection: net.Socket) => {
   connection.on("data", (data: Buffer) => {
     const parts = parseRESP(data);
+    let listName = "";
+    let values: string[] = [];
 
     if(parts.length === 0) { return }
 
     const command = parts[0].toUpperCase();
 
-    const listName = parts[1] ? parts[1] : "";
-    const values = parts.slice(2);
+    if(command === "XREAD") {
+      listName = parts[2] ?? "";
+      values = parts.slice(3);
+    } else {
+      listName = parts[1] ?? "";
+      values = parts.slice(2);
+    }
 
     let list = mem.get(listName);
 
@@ -459,6 +466,32 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
             fieldArray.push(field, value);
           }
 
+          result.push([entry.id, fieldArray]);
+        }
+      }
+
+      connection.write(writeRESPArray(result));
+
+    } else if (command === "XREAD") {
+      const streamName = parts[2] ?? "";
+      const start = values[0] ?? "-";
+
+      const [msPart, seqPart] = start.split("-");
+
+      if(!stream.has(streamName)) {
+        connection.write(writeRESPArray([]));
+        return;
+      }
+
+      const streamEntries = stream.get(streamName)!;
+      const result: any[] = [];
+
+      for (const entry of streamEntries) {
+        if((entry.id > start)) {
+          const fieldArray: string[] = [];
+          for(const [field, value] of Object.entries(entry.fields)) {
+            fieldArray.push(field, value);
+          }
           result.push([entry.id, fieldArray]);
         }
       }
