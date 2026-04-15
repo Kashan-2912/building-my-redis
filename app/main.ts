@@ -451,8 +451,6 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       const start = values[0] ?? "-";
       const end = values[1] ?? "+";
 
-      let finalResult: any[] = [];
-
       if(!stream.has(streamName)) {
         connection.write(writeRESPArray([]));
         return;
@@ -472,13 +470,12 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         }
       }
 
-      finalResult.push([streamName, result]);
-
-      connection.write(writeRESPArray(finalResult));
+      connection.write(writeRESPArray(result));
 
     } else if (command === "XREAD") {
       const streamName = parts[2] ?? "";
       const start = values[0] ?? "-";
+      let finalResult: any[] = [];
 
       if(!stream.has(streamName)) {
         connection.write(writeRESPArray([]));
@@ -498,7 +495,9 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         }
       }
 
-      connection.write(writeRESPArray(result));
+      finalResult.push([streamName, result]);
+
+      connection.write(writeRESPArray(finalResult));
 
     } else {
       connection.write(writeRESPError(`unknown command '${command}'`));
