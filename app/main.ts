@@ -451,6 +451,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       const start = values[0] ?? "-";
       const end = values[1] ?? "+";
 
+      let finalResult: any[] = [];
+
       if(!stream.has(streamName)) {
         connection.write(writeRESPArray([]));
         return;
@@ -470,7 +472,9 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         }
       }
 
-      connection.write(writeRESPArray(result));
+      finalResult.push([streamName, result]);
+
+      connection.write(writeRESPArray(finalResult));
 
     } else if (command === "XREAD") {
       const streamName = parts[2] ?? "";
