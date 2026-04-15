@@ -460,6 +460,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
 
       const streamEntries = stream.get(streamName)!;
       const result: any[] = [];
+      finalResult.push(streamName);
 
       for(const entry of streamEntries) {
         if((start === "-" || entry.id >= start) && (end === "+" || entry.id <= end)) {
@@ -472,7 +473,7 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
         }
       }
 
-      finalResult.push([streamName, result]);
+      finalResult.push(result);
 
       connection.write(writeRESPArray(finalResult));
 
