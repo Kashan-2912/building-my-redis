@@ -476,8 +476,6 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
       const streamName = parts[2] ?? "";
       const start = values[0] ?? "-";
 
-      const [msPart, seqPart] = start.split("-");
-
       if(!stream.has(streamName)) {
         connection.write(writeRESPArray([]));
         return;
